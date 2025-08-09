@@ -6,8 +6,8 @@ export default function MainLayout() {
     return (
         <>
             <Header />
-            <main className="min-h-screen px-4 py-6">
-            <Outlet />
+            <main className="min-h-screen pt-16 md:pt-24">
+                <Outlet />
             </main>
             <Footer />
         </>

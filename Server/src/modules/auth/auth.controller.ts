@@ -1,4 +1,6 @@
 import {
+    Body,
+    ConflictException,
     Controller,
     InternalServerErrorException,
     Post,
@@ -11,8 +13,14 @@ import { UserService } from 'src/modules/user/user.service';
 import { LocalAuthGuard } from 'src/common/guards/local-auth.guard';
 import type { LoginRequest } from 'src/modules/auth/interface/login-request.interface';
 import type { Response as ResType } from 'express';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBody,
+    ApiConflictResponse,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
 import { LoginResponseDto } from 'src/modules/auth/dto/login-response.dto';
+import { SignUpDto } from 'src/modules/auth/dto/sign-up-request.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -46,6 +54,22 @@ export class AuthController {
         return {
             access_token,
             user,
+        };
+    }
+
+    @Post('sign-up')
+    @ApiBody({ type: SignUpDto })
+    @ApiConflictResponse({
+        description: 'Email has been registered.',
+    })
+    async signUp(@Body() userData: SignUpDto) {
+        const user = await this.userService.getOneByEmail(userData.email);
+        if (user) throw new ConflictException('Email has been registed.');
+
+        const createdUser = await this.userService.create(userData);
+        return {
+            message: 'Success',
+            user: createdUser,
         };
     }
 

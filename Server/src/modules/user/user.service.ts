@@ -11,6 +11,16 @@ export class UserService {
         private readonly userRepository: Repository<User>,
     ) {}
 
+    getOneByEmail(email: string) {
+        return this.userRepository.findOneBy({ email });
+    }
+
+    create(userData: Partial<User>) {
+        const user = this.userRepository.create(userData);
+
+        return this.userRepository.save(user);
+    }
+
     async update(id: number, userData: Partial<User>) {
         await this.userRepository.update({ id }, userData);
 
