@@ -12,6 +12,9 @@ import { FieldReview } from 'src/entities/field-review.entity';
 import { UserModule } from './modules/user/user.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { PassportModule } from '@nestjs/passport';
+import { MailerModule } from '@nestjs-modules/mailer';
+import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { join } from 'path';
 
 @Module({
     imports: [
@@ -25,6 +28,29 @@ import { PassportModule } from '@nestjs/passport';
             database: process.env.DB_NAME,
             entities: [User, Booking, Sport, Field, FieldSlot, FieldReview],
             synchronize: true,
+        }),
+        MailerModule.forRootAsync({
+            useFactory: () => ({
+                transport: {
+                    host: 'smtp.gmail.com',
+                    port: 465,
+                    secure: true,
+                    auth: {
+                        user: process.env.MAIL_USER,
+                        pass: process.env.MAIL_PASS,
+                    },
+                },
+                defaults: {
+                    from: '"EasySport" <modules@nestjs.com>',
+                },
+                template: {
+                    dir: join(__dirname, '..', 'src', 'mail', 'templates'),
+                    adapter: new HandlebarsAdapter(),
+                    options: {
+                        strict: true,
+                    },
+                },
+            }),
         }),
         PassportModule,
         UserModule,

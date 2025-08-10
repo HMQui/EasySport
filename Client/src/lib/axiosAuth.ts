@@ -1,6 +1,6 @@
 import axios from "axios";
 import { store } from "@/app/store";
-import { logout, setAccessToken } from "@/features/slice/authSlice";
+import { logout, setNewData } from "@/features/slice/authSlice";
 
 const axiosAuth = axios.create({
     baseURL: import.meta.env.VITE_SERVER_DOMAIN,
@@ -34,7 +34,7 @@ axiosAuth.interceptors.response.use(
                 );
 
                 const newAccessToken = refreshResponse.data.access_token;
-                store.dispatch(setAccessToken(newAccessToken));
+                store.dispatch(setNewData(newAccessToken));
 
                 originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
                 return axiosAuth(originalRequest);

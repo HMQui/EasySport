@@ -8,14 +8,14 @@ export const login = createAsyncThunk(
     async ({ email, password }: { email: string; password: string }, thunkAPI) => {
         try {
             const response = await axios.post(
-                "/api/auth/login",
+                import.meta.env.VITE_SERVER_DOMAIN + "/auth/login-local",
                 { email, password },
                 { withCredentials: true }
             );
-
             return response.data;
         } catch (error: any) {
-            return thunkAPI.rejectWithValue(error.response?.data?.message || "Login failed");
+            const message = error.response?.status || 500;
+            return thunkAPI.rejectWithValue(message);
         }
     }
 );
@@ -48,8 +48,20 @@ const authSlice = createSlice({
             state.error = null;
         },
 
-        setAccessToken: (state, action: PayloadAction<string>) => {
-            state.access_token = action.payload;
+        setNewData: (
+            state,
+            action: PayloadAction<{
+                access_token: string;
+                user: {
+                    id: string;
+                    name: string;
+                    email: string;
+                    role: string;
+                };
+            }>
+        ) => {
+            state.access_token = action.payload.access_token;
+            state.user = action.payload.user;
         }
     },
     extraReducers: (builder) => {
@@ -70,5 +82,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { logout, setAccessToken } = authSlice.actions;
+export const { logout, setNewData } = authSlice.actions;
 export default authSlice.reducer;
