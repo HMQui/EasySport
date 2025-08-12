@@ -26,6 +26,12 @@ export class User {
     @Column({ nullable: true })
     phone: string;
 
+    @Column({
+        default:
+            'https://res.cloudinary.com/dteeo7nn2/image/upload/z0bgfar7toh7t5knqpnm.png',
+    })
+    avatar: string;
+
     @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
     role: UserRole;
 

@@ -5,10 +5,11 @@ import { UserModule } from 'src/modules/user/user.module';
 import { LocalStrategy } from 'src/common/passport/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
+import { GoogleStrategy } from 'src/common/passport/google.strategy';
 
 @Module({
     controllers: [AuthController],
-    providers: [AuthService, LocalStrategy],
+    providers: [AuthService, LocalStrategy, GoogleStrategy],
     imports: [
         UserModule,
         ConfigModule.forRoot(),

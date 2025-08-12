@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import type { refreshTokenInterface } from "@/interfaces/auth.interface";
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import type { PayloadAction } from "@reduxjs/toolkit";
 import axios from "axios";
@@ -12,6 +13,7 @@ export const login = createAsyncThunk(
                 { email, password },
                 { withCredentials: true }
             );
+
             return response.data;
         } catch (error: any) {
             const message = error.response?.status || 500;
@@ -20,12 +22,27 @@ export const login = createAsyncThunk(
     }
 );
 
+export const logout = createAsyncThunk("auth/logout", async (_, thunkAPI) => {
+    try {
+        await axios.post(
+            import.meta.env.VITE_SERVER_DOMAIN + "/auth/logout",
+            {},
+            { withCredentials: true }
+        );
+        return true; // thành công
+    } catch (error: any) {
+        const message = error.response?.status || 500;
+        return thunkAPI.rejectWithValue(message);
+    }
+});
+
 interface AuthState {
     access_token: string | null;
     user: {
         id: string;
         name: string;
         email: string;
+        avatar: string;
     } | null;
     loading: boolean;
     error: string | null;
@@ -42,30 +59,14 @@ const authSlice = createSlice({
     name: "auth",
     initialState,
     reducers: {
-        logout: (state) => {
-            state.access_token = null;
-            state.user = null;
-            state.error = null;
-        },
-
-        setNewData: (
-            state,
-            action: PayloadAction<{
-                access_token: string;
-                user: {
-                    id: string;
-                    name: string;
-                    email: string;
-                    role: string;
-                };
-            }>
-        ) => {
+        setNewData: (state, action: PayloadAction<refreshTokenInterface>) => {
             state.access_token = action.payload.access_token;
             state.user = action.payload.user;
         }
     },
     extraReducers: (builder) => {
         builder
+            // Login
             .addCase(login.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -78,9 +79,25 @@ const authSlice = createSlice({
             .addCase(login.rejected, (state, action: PayloadAction<any>) => {
                 state.loading = false;
                 state.error = action.payload || "Login failed";
+            })
+
+            // Logout
+            .addCase(logout.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(logout.fulfilled, (state) => {
+                state.loading = false;
+                state.access_token = null;
+                state.user = null;
+                state.error = null;
+            })
+            .addCase(logout.rejected, (state, action: PayloadAction<any>) => {
+                state.loading = false;
+                state.error = action.payload || "Logout failed";
             });
     }
 });
 
-export const { logout, setNewData } = authSlice.actions;
+export const { setNewData } = authSlice.actions;
 export default authSlice.reducer;

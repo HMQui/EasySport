@@ -3,20 +3,24 @@ import {
     Body,
     ConflictException,
     Controller,
+    Get,
     InternalServerErrorException,
     Post,
+    Req,
     Request,
     Response,
+    UnauthorizedException,
     UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { UserService } from 'src/modules/user/user.service';
 import { LocalAuthGuard } from 'src/common/guards/local-auth.guard';
 import type { LoginRequest } from 'src/modules/auth/interface/login-request.interface';
-import type { Response as ResType } from 'express';
+import type { Response as ResType, Request as ReqType } from 'express';
 import {
     ApiBody,
     ApiConflictResponse,
+    ApiCookieAuth,
     ApiResponse,
     ApiTags,
 } from '@nestjs/swagger';
@@ -25,6 +29,7 @@ import { SignUpDto } from 'src/modules/auth/dto/sign-up-request.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { VerifyEmailDto } from 'src/modules/auth/dto/verify-email-request.dto';
 import { generateRandomInt } from 'src/utils/generate-random-int';
+import { GoogleAuthGuard } from 'src/common/guards/google-auth.guard';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -35,7 +40,7 @@ export class AuthController {
         private mailerService: MailerService,
     ) {}
 
-    // Login
+    // Login Local
     @UseGuards(LocalAuthGuard)
     @Post('login-local')
     @ApiResponse({
@@ -43,7 +48,7 @@ export class AuthController {
         description: 'Login',
         type: LoginResponseDto,
     })
-    async login(@Request() req: LoginRequest, @Response() res: ResType) {
+    async loginLocal(@Request() req: LoginRequest, @Response() res: ResType) {
         const { access_token, refresh_token, user } =
             await this.authService.login(req.user);
 
@@ -62,6 +67,48 @@ export class AuthController {
             access_token,
             user,
         });
+    }
+
+    // Login Google
+    @Get('/login-google')
+    @UseGuards(GoogleAuthGuard)
+    async googleAuth() {}
+
+    @Get('/google/redirect')
+    @UseGuards(GoogleAuthGuard)
+    async googleAuthRedirect(@Request() req, @Response() res: ResType) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { access_token, refresh_token, user } =
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-argument
+            await this.authService.login(req.user);
+
+        res.cookie('refresh_token', refresh_token, {
+            httpOnly: true,
+            secure: true,
+            sameSite: 'lax',
+            maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+
+        res.redirect(process.env.CLIENT_DOMAIN + '/login-success');
+    }
+
+    // Logout
+    @Post('/logout')
+    logout(@Req() req: ReqType, @Response({ passthrough: true }) res: ResType) {
+        const cookies = req.cookies as { refresh_token?: string };
+        const refreshToken = cookies.refresh_token;
+
+        if (refreshToken) {
+            res.clearCookie('refresh_token', {
+                httpOnly: true,
+                secure: true,
+                sameSite: 'strict',
+            });
+        }
+
+        return {
+            message: 'success',
+        };
     }
 
     // Sign up
@@ -83,8 +130,45 @@ export class AuthController {
 
     // Refresh token
     @Post('refresh-token')
-    refreshToken() {
-        return 'Hello';
+    @ApiCookieAuth('refresh_token')
+    @ApiResponse({
+        status: 200,
+        description: 'Get new access token and User data',
+        schema: {
+            example: {
+                message: 'success',
+                access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                user: {
+                    id: 1,
+                    name: 'John Doe',
+                    email: 'john@example.com',
+                    role: 'user',
+                    avatar: 'https://example.com/avatar.jpg',
+                },
+            },
+        },
+    })
+    async refreshToken(@Req() req: ReqType) {
+        const cookies = req.cookies as { refresh_token?: string };
+        if (!cookies?.refresh_token) {
+            throw new UnauthorizedException('Refresh token not found.');
+        }
+
+        const result = await this.authService.verifyRefreshToken(
+            cookies.refresh_token,
+        );
+
+        if (!result) {
+            throw new UnauthorizedException('Invalid refresh token.');
+        }
+
+        const { access_token, user } = result;
+
+        return {
+            message: 'success',
+            access_token,
+            user,
+        };
     }
 
     // Verify email
@@ -109,7 +193,7 @@ export class AuthController {
         description: 'Failed to send verification email',
     })
     async verifyEmail(@Body() dataEmail: VerifyEmailDto) {
-        const email = dataEmail.email;
+        const { email, purpose } = dataEmail;
         const verifyCode = generateRandomInt(100000, 999999);
 
         try {
@@ -120,7 +204,7 @@ export class AuthController {
                 template: 'verify-email',
                 context: {
                     email: email,
-                    purpose: 'verify your account',
+                    purpose,
                     verifyCode,
                     year: new Date().getFullYear(),
                 },

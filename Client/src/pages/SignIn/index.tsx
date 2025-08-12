@@ -1,14 +1,16 @@
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import type { AppDispatch } from "@/app/store";
 import SignInBgLg from "@/assets/images/bg/SignInBgLg.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { validateInput } from "@/utils/validateInput";
-import React, { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { LoaderCircle } from "lucide-react";
 import { login } from "@/features/slice/authSlice";
-import type { AppDispatch } from "@/app/store";
 
 function SignIn() {
+    const navigate = useNavigate();
     const dispatch = useDispatch<AppDispatch>();
     const [valueSignIn, setValueSignIn] = useState({
         email: "",
@@ -57,11 +59,9 @@ function SignIn() {
 
             const { email, password } = valueSignIn;
             const data = await dispatch(login({ email, password })).unwrap();
-            console.log(data);
-            
-            if (data.message === "success") {
-                alert("Sign in successfully");
 
+            if (data.message === "success") {
+                navigate("/");
                 return;
             }
         } catch (error) {
@@ -73,6 +73,10 @@ function SignIn() {
         } finally {
             setLoading((prev) => ({ ...prev, local: false }));
         }
+    };
+
+    const hanldeLoginGoogle = () => {
+        window.location.href = import.meta.env.VITE_SERVER_DOMAIN + "/auth/login-google";
     };
 
     return (
@@ -113,9 +117,9 @@ function SignIn() {
                         )}
                     </form>
                     <div className="mt-3 flex justify-end items-start gap-2 text-gray-500 text-sm">
-                        <a href="/forgot-password" className="hover:text-black">
+                        <Link to="/forgot-password" className="hover:text-black">
                             Forgot password?
-                        </a>
+                        </Link>
                     </div>
 
                     <div className="mb-5 mt-2 flex justify-center items-center w-full gap-2">
@@ -133,7 +137,8 @@ function SignIn() {
                         ) : (
                             <Button
                                 variant="ghost"
-                                className="w-full flex justify-center items-center border-[1px] h-10 cursor-pointer">
+                                className="w-full flex justify-center items-center border-[1px] h-10 cursor-pointer"
+                                onClick={hanldeLoginGoogle}>
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
                                     x="0px"

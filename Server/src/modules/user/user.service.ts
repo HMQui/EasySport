@@ -15,6 +15,10 @@ export class UserService {
         return this.userRepository.findOneBy({ email });
     }
 
+    getOne(userData: Partial<User>) {
+        return this.userRepository.findOneBy(userData);
+    }
+
     async create(userData: Partial<User>) {
         const user = this.userRepository.create(userData);
         user.password = await bcrypt.hash(user.password, 10);

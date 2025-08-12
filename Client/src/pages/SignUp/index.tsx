@@ -24,7 +24,8 @@ import SignUpBgLg from "@/assets/images/bg/SignUpBgLg.jpg";
 import { validateInput } from "@/utils/validateInput";
 import { LoaderCircle } from "lucide-react";
 import axiosPublic from "@/lib/axiosPublic";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { fetchVerifyEmail } from "@/api/auth.api";
 
 function SignUp() {
     const naviagte = useNavigate();
@@ -95,7 +96,7 @@ function SignUp() {
 
         try {
             setLoaing((prev) => ({ ...prev, signUp: true }));
-            const code = await fetchVerifyEmail(email);
+            const code = await handleVerifyEmail(email) || "";
             setVerifyCode(code.toString());
             setOpenVerifyDialog(true);
         } finally {
@@ -106,7 +107,7 @@ function SignUp() {
     const handleResendVerifyCode = async (email: string) => {
         try {
             setLoaing((prev) => ({ ...prev, resendCode: true }));
-            const code = await fetchVerifyEmail(email);
+            const code = await handleVerifyEmail(email) || "";
             setVerifyCode(code.toString());
         } finally {
             setLoaing((prev) => ({ ...prev, resendCode: false }));
@@ -131,10 +132,10 @@ function SignUp() {
         }
     };
 
-    const fetchVerifyEmail = async (email: string) => {
+    const handleVerifyEmail = async (email: string) => {
         try {
-            const res = await axiosPublic.post("/auth/verify-email", { email });
-            return res.data.verify_code;
+            const code = await fetchVerifyEmail(email);
+            return code;
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (error: any) {
             if (error.response?.status === 400) {
@@ -153,8 +154,7 @@ function SignUp() {
         delete newUser.confirmPassword;
         try {
             const res = await axiosPublic.post("/auth/sign-up", newUser);
-            if (res.data.message === 'success')
-                naviagte('/sign-in');
+            if (res.data.message === "success") naviagte("/sign-in");
             setHelpText((prev) => ({
                 ...prev,
                 signUp: "Something went wrong. Please try again."
@@ -247,9 +247,9 @@ function SignUp() {
                             )}
                         </form>
                         <div className="mt-3 flex justify-end items-start gap-2 text-gray-500 text-sm">
-                            <a href="/sign-in" className="hover:text-black">
+                            <Link to="/sign-in" className="hover:text-black">
                                 Have an account before?
-                            </a>
+                            </Link>
                         </div>
 
                         <div className="mb-5 mt-2 flex justify-center items-center w-full gap-2">
