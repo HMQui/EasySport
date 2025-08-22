@@ -26,6 +26,7 @@ export class UserService {
     }
 
     async update(id: number, userData: Partial<User>) {
+        userData.updated_at = new Date();
         await this.userRepository.update({ id }, userData);
 
         return this.userRepository.findOneBy({ id });

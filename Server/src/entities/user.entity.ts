@@ -44,6 +44,9 @@ export class User {
     @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
     created_at: Date;
 
+    @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+    updated_at: Date;
+
     @OneToMany(() => Field, (field) => field.owner)
     fields: Field[];
 

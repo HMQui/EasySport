@@ -1,6 +1,6 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import MainLayout from "@/components/LayOut";
-import { Home, SignIn, SignUp } from "@/pages";
+import { Home, Profile, SignIn, SignUp } from "@/pages";
 import { GuessRoute, ProtectedRoute } from "@/components/guardRoute";
 import { useEffect } from "react";
 import { fecthRefreshToken } from "@/api/auth.api";
@@ -39,6 +39,7 @@ function App() {
                     {/* Protected routes */}
                     <Route element={<ProtectedRoute />}>
                         <Route path="/logout" element={<Logout />} />
+                        <Route path="/profile" element={<Profile />} />
                     </Route>
                 </Route>
 

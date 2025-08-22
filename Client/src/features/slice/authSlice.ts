@@ -43,6 +43,7 @@ interface AuthState {
         name: string;
         email: string;
         avatar: string;
+        role: string;
     } | null;
     loading: boolean;
     error: string | null;
@@ -62,6 +63,28 @@ const authSlice = createSlice({
         setNewData: (state, action: PayloadAction<refreshTokenInterface>) => {
             state.access_token = action.payload.access_token;
             state.user = action.payload.user;
+            state.loading = false;
+        },
+        updateUserProfile: (
+            state,
+            action: PayloadAction<{
+                id: string | number;
+                name: string;
+                email: string;
+                avatar: string;
+                role: string;
+            }>
+        ) => {
+            if (state.user) {
+                state.user = {
+                    ...state.user,
+                    id: String(action.payload.id),
+                    name: action.payload.name,
+                    email: action.payload.email,
+                    avatar: action.payload.avatar,
+                    role: action.payload.role
+                };
+            }
         }
     },
     extraReducers: (builder) => {
@@ -99,5 +122,5 @@ const authSlice = createSlice({
     }
 });
 
-export const { setNewData } = authSlice.actions;
+export const { setNewData, updateUserProfile } = authSlice.actions;
 export default authSlice.reducer;
